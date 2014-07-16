@@ -1,38 +1,91 @@
 package edu.udayton.udri.stash.hook;
 
+import com.atlassian.stash.commit.CommitService;
+import com.atlassian.stash.content.Changeset;
+import com.atlassian.stash.content.ChangesetsBetweenRequest;
 import com.atlassian.stash.hook.*;
 import com.atlassian.stash.hook.repository.*;
 import com.atlassian.stash.repository.*;
-import java.util.ArrayList;
+import com.atlassian.stash.util.*;
+import com.google.common.collect.Sets;
+
 import java.util.Collection;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class MergeOnlyBranchesHook implements PreReceiveRepositoryHook
 {
+    private static final PageRequestImpl PAGE_REQUEST = new PageRequestImpl(0, 100);
+    
+    private final CommitService commitService;
+
+    private final Map<String, Set<Rule>> branchRules= new HashMap<String, Set<Rule>>();
+    
+    public MergeOnlyBranchesHook(CommitService commitService) 
+    {
+        this.commitService = commitService;
+        
+        branchRules.put("refs/heads/master", Sets.newHashSet(Rule.PULL_REQUEST));
+        branchRules.put("refs/heads/development", Sets.newHashSet(Rule.PULL_REQUEST));
+        branchRules.put("refs/heads/release/.*", Sets.newHashSet(Rule.PULL_REQUEST));
+        branchRules.put("refs/heads/integration/.*", Sets.newHashSet(Rule.PULL_REQUEST, Rule.NO_CONFLICT_MERGE));
+    }
+    
     /**
      * Disables deletion of branches
      */
     @Override
     public boolean onReceive(RepositoryHookContext context, Collection<RefChange> refChanges, HookResponse hookResponse)
     {
-        List<String> branchRegexes = new ArrayList<String>();
-        branchRegexes.add("refs/heads/master");
-        branchRegexes.add("refs/heads/development");
-        branchRegexes.add("refs/heads/release/.*");
-        branchRegexes.add("refs/heads/integration/.*");
+        Repository repository = context.getRepository();
 
         for (RefChange change : refChanges)
         {
-            for (String branchRegex : branchRegexes)
+            for (String branchRegex : branchRules.keySet())
             {
                 if (change.getRefId().matches(branchRegex))
                 {
-                    // This hook is only called for pushes, not pull requests (merges), so deny this change.
-                    hookResponse.err().format("%nYou may not push directly to %s (matched %s)%nPlease use a pull request.%n", change.getRefId(), branchRegex);
-                    return false;
+                	// found rules for the branch being updated, see which applies
+                	if (branchRules.get(branchRegex).contains(Rule.NO_CONFLICT_MERGE))
+                	{
+                	    for (Changeset changeSet : getChangesetsBetween(repository, change))
+	                    {
+                	    	if (changeSet.getMessage().startsWith("Merge branch"))
+                    		{
+	                        	// found a change set with a merge, make sure there are no conflicts
+	                        	if (changeSet.getMessage().contains("Conflicts:"))
+	                        	{
+	                        		hookResponse.err().format(
+	                        				"%nYou may not push merges with conflicts to %s (matched %s)%nPlease use a pull request.%n%n", 
+	                        				change.getRefId(), branchRegex);
+	                                return false;
+	                        	}
+                    		}
+	                    }
+                	}
+                	else
+                	{
+	                    // found a commit push were only pull requests are allowed
+	                    hookResponse.err().format("%nYou may not push (even merge commits) directly to %s (matched %s)%n"
+	                    							+ "Please use a pull request.%n%n", change.getRefId(), branchRegex);
+	                    return false;
+                	}
                 }
             }
         }
         return true;
+    }
+
+    private Iterable<Changeset> getChangesetsBetween(final Repository repository, final RefChange refChange) {
+        return new PagedIterable<Changeset>(new PageProvider<Changeset>() {
+            @Override
+            public Page<Changeset> get(PageRequest pageRequest) {
+                return commitService.getChangesetsBetween(new ChangesetsBetweenRequest.Builder(repository)
+                        .exclude(refChange.getFromHash())
+                        .include(refChange.getToHash())
+                        .build(), pageRequest);
+            }
+        }, PAGE_REQUEST);
     }
 }
