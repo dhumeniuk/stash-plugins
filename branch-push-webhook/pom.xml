@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>edu.udayton.udri.stash</groupId>
     <artifactId>branch-push-webhook</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2.1-SNAPSHOT</version>
     <organization>
         <name>UDRI</name>
         <url>http://udri.udayton.edu/</url>

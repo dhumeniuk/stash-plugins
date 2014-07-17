@@ -26,7 +26,7 @@ public class MergeOnlyBranchesHook implements PreReceiveRepositoryHook
     {
         this.commitService = commitService;
         
-        branchRules.put("refs/heads/master", Sets.newHashSet(Rule.PULL_REQUEST));
+        branchRules.put("refs/heads/master", Sets.newHashSet(Rule.PULL_REQUEST, Rule.NO_CONFLICT_MERGE));
         branchRules.put("refs/heads/development", Sets.newHashSet(Rule.PULL_REQUEST));
         branchRules.put("refs/heads/release/.*", Sets.newHashSet(Rule.PULL_REQUEST));
         branchRules.put("refs/heads/integration/.*", Sets.newHashSet(Rule.PULL_REQUEST, Rule.NO_CONFLICT_MERGE));
