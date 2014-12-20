@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="${project.name}" plugins-version="2">
+  <plugin-info>
+    <description>${project.description}</description>
+    <version>${project.version}</version>
+    <vendor name="${project.organization.name}" url="${project.organization.url}"/>
+    <param name="plugin-icon">images/pluginIcon.png</param>
+    <param name="plugin-logo">images/pluginLogo.png</param>
+  </plugin-info>
+  <!-- add our i18n resource -->
+  <resource type="i18n" name="i18n" location="merge-target-webhook"/>
+  <!-- add our web resources -->
+  <web-resource key="merge-target-webhook-resources" name="merge-target-webhook Web Resources">
+    <dependency>com.atlassian.auiplugin:ajs</dependency>
+    <resource type="download" name="merge-target-webhook.css" location="/css/merge-target-webhook.css"/>
+    <resource type="download" name="merge-target-webhook.js" location="/js/merge-target-webhook.js"/>
+    <resource type="download" name="images/" location="/images"/>
+    <context>merge-target-webhook</context>
+  </web-resource>
+  <!-- publish our component -->
+  <component key="myPluginComponent" class="edu.udayton.udri.stash.MyPluginComponentImpl" public="true">
+    <interface>edu.udayton.udri.stash.MyPluginComponent</interface>
+  </component>
+  <!-- import from the product container -->
+  <component-import key="applicationProperties" interface="com.atlassian.sal.api.ApplicationProperties"/>
+  <repository-hook name="Check Branch Target Hook" i18n-name-key="check-branch-target-hook.name" key="check-branch-target-hook" class="edu.udayton.udri.stash.hook.CheckBranchTargetHook">
+    <description key="check-branch-target-hook.description">The Check Branch Target Hook Plugin</description>
+    <icon>icon-example.png</icon>
+  </repository-hook>
+</atlassian-plugin>

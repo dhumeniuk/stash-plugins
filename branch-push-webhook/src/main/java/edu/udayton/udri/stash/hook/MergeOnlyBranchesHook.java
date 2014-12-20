@@ -26,7 +26,9 @@ public class MergeOnlyBranchesHook implements PreReceiveRepositoryHook
     {
         this.commitService = commitService;
         
-        branchRules.put("refs/heads/master", Sets.newHashSet(Rule.PULL_REQUEST, Rule.NO_CONFLICT_MERGE));
+        // disabled for now, need a rule so that only fast forward merges from dev can happen, as it is now, rule doesn't work
+        //branchRules.put("refs/heads/master", Sets.newHashSet(Rule.PULL_REQUEST, Rule.NO_CONFLICT_MERGE));
+        
         branchRules.put("refs/heads/development", Sets.newHashSet(Rule.PULL_REQUEST));
         branchRules.put("refs/heads/release/.*", Sets.newHashSet(Rule.PULL_REQUEST));
         branchRules.put("refs/heads/integration/.*", Sets.newHashSet(Rule.PULL_REQUEST, Rule.NO_CONFLICT_MERGE));
